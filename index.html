@@ -55,6 +55,19 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
+        // --- KONFIGURASI API KEY (Load Balancer Sederhana) ---
+        const apiKeys = [
+            "AIzaSyD4j05g-mMfXYexu0-p5RzMZgv-5b7p0hg",
+            "AIzaSyBP-jCWSpueJP1B2T22AX6mOaINHwYl-P8",
+            "AIzaSyDNmr5NCFPrr6AHuJnkVVtk3fp0tiwrfIw"
+        ];
+        
+        // Pilih satu key secara acak saat aplikasi dimuat
+        const apiKey = apiKeys[Math.floor(Math.random() * apiKeys.length)];
+        // --------------------------------------------------
+
+        const AI_MODEL = "gemini-2.5-flash-preview-09-2025";
+
         // Optimized Icon Component for stable CDN usage
         const Icon = ({ name, size = 24, className = "" }) => {
             const iconRef = useRef(null);
@@ -76,9 +89,6 @@
 
             return <span ref={iconRef} className="inline-flex items-center justify-center"></span>;
         };
-
-        const apiKey = ""; // MASUKKAN API KEY GEMINI ANDA DI SINI
-        const AI_MODEL = "gemini-2.5-flash-preview-09-2025";
 
         function App() {
             const [step, setStep] = useState(1);
@@ -163,7 +173,7 @@
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(payload)
                         });
-                        if (!response.ok) throw new Error('API Error');
+                        if (!response.ok) throw new Error('API Error: Cek Koneksi atau Kuota API');
                         const data = await response.json();
                         return data.candidates?.[0]?.content?.parts?.[0]?.text;
                     } catch (err) {
@@ -253,78 +263,99 @@
             };
 
             const SettingsForm = ({ isSidebar = false }) => (
-                <div className="space-y-6">
-                    <div className="space-y-3">
-                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                            <Icon name="Type" size={14} className="text-emerald-600" /> Tema Utama
-                        </label>
-                        <div className="relative">
-                            <select onChange={handleAddTheme} defaultValue="" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 appearance-none text-slate-800 font-bold cursor-pointer transition-all text-sm">
-                                <option value="" disabled>-- Cari Tema --</option>
-                                {themeOptions.filter(t => !selectedThemes.includes(t)).map(t => <option key={t} value={t}>{t}</option>)}
-                            </select>
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                <Icon name="ChevronDown" size={16} />
+                <div className={`space-y-4 ${isSidebar ? 'text-sm' : ''}`}>
+                    {/* Row 1: Tema & Jenis */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                <Icon name="Type" size={14} className="text-emerald-600" /> Tema Utama
+                            </label>
+                            <div className="relative">
+                                <select onChange={handleAddTheme} defaultValue="" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 appearance-none text-slate-800 font-bold cursor-pointer transition-all text-sm">
+                                    <option value="" disabled>-- Pilih Tema --</option>
+                                    {themeOptions.filter(t => !selectedThemes.includes(t)).map(t => <option key={t} value={t}>{t}</option>)}
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                    <Icon name="ChevronDown" size={16} />
+                                </div>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                                {selectedThemes.map(t => (
+                                    <button key={t} onClick={() => removeTheme(t)} className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-[10px] font-black border border-emerald-100 uppercase transition-all shadow-sm">
+                                        {t} <Icon name="X" size={12} />
+                                    </button>
+                                ))}
                             </div>
                         </div>
-                        <div className="flex flex-wrap gap-1.5">
-                            {selectedThemes.map(t => (
-                                <button key={t} onClick={() => removeTheme(t)} className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg text-[10px] font-black border border-emerald-100 uppercase transition-all shadow-sm">
-                                    {t} <Icon name="X" size={12} />
-                                </button>
-                            ))}
+
+                        <div className="space-y-2">
+                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Jenis Dakwah</label>
+                            <div className="relative">
+                                <select value={formData.jenis} onChange={e => setFormData({...formData, jenis: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none font-bold text-slate-800 appearance-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                                    {jenisOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                    <Icon name="ChevronDown" size={16} />
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="space-y-3">
-                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Jenis Dakwah</label>
-                        <div className="relative">
-                            <select value={formData.jenis} onChange={e => setFormData({...formData, jenis: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none font-bold text-slate-800 appearance-none focus:ring-2 focus:ring-emerald-500 text-sm">
-                                {jenisOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                            </select>
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                <Icon name="ChevronDown" size={16} />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
+                    {/* Row 2: Gaya, Durasi, Bahasa */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Gaya</label>
-                            <select value={formData.gayaBahasa} onChange={e => setFormData({...formData, gayaBahasa: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none font-bold text-slate-800 text-sm">
-                                {gayaOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                            </select>
+                            <div className="relative">
+                                <select value={formData.gayaBahasa} onChange={e => setFormData({...formData, gayaBahasa: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none font-bold text-slate-800 text-sm appearance-none">
+                                    {gayaOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                    <Icon name="ChevronDown" size={14} />
+                                </div>
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Durasi</label>
-                            <select value={formData.durasi} onChange={e => setFormData({...formData, durasi: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none font-bold text-slate-800 text-sm">
-                                {durasiOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                            </select>
+                            <div className="relative">
+                                <select value={formData.durasi} onChange={e => setFormData({...formData, durasi: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none font-bold text-slate-800 text-sm appearance-none">
+                                    {durasiOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                    <Icon name="ChevronDown" size={14} />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Bahasa</label>
+                            <div className="relative">
+                                <select value={formData.bahasa} onChange={e => setFormData({...formData, bahasa: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none font-bold text-slate-800 text-sm appearance-none">
+                                    {['Indonesia', 'Jawa', 'Sunda', 'Arab', 'Inggris'].map(o => <option key={o} value={o}>{o}</option>)}
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                    <Icon name="ChevronDown" size={14} />
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Bahasa</label>
-                        <select value={formData.bahasa} onChange={e => setFormData({...formData, bahasa: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none font-bold text-slate-800 text-sm">
-                            {['Indonesia', 'Jawa', 'Sunda', 'Arab', 'Inggris'].map(o => <option key={o} value={o}>{o}</option>)}
-                        </select>
+                    {/* Row 3: Judul & Instruksi */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-xs font-black text-slate-700 uppercase tracking-widest ml-1 flex items-center gap-2">
+                                <Icon name="PenTool" size={14} className="text-emerald-600" /> Judul
+                            </label>
+                            <input type="text" value={formData.judulKustom} onChange={e => setFormData({...formData, judulKustom: e.target.value})} placeholder="Isi judul..." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-800 text-sm h-[80px]" />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-xs font-black text-slate-700 uppercase tracking-widest ml-1 flex items-center gap-2">
+                                <Icon name="MessageCircle" size={14} className="text-emerald-600" /> Instruksi
+                            </label>
+                            <textarea value={formData.instruksiKhusus} onChange={e => setFormData({...formData, instruksiKhusus: e.target.value})} placeholder="Catatan tambahan..." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 h-[80px] resize-none font-bold text-xs" />
+                        </div>
                     </div>
 
-                    <div className="space-y-3">
-                        <label className="text-xs font-black text-slate-700 uppercase tracking-widest ml-1 flex items-center gap-2">
-                            <Icon name="PenTool" size={14} className="text-emerald-600" /> Judul
-                        </label>
-                        <input type="text" value={formData.judulKustom} onChange={e => setFormData({...formData, judulKustom: e.target.value})} placeholder="Isi judul..." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-800 text-sm" />
-                    </div>
-
-                    <div className="space-y-3">
-                        <label className="text-xs font-black text-slate-700 uppercase tracking-widest ml-1 flex items-center gap-2">
-                            <Icon name="MessageCircle" size={14} className="text-emerald-600" /> Instruksi
-                        </label>
-                        <textarea value={formData.instruksiKhusus} onChange={e => setFormData({...formData, instruksiKhusus: e.target.value})} placeholder="Catatan tambahan..." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 h-24 resize-none font-bold text-xs" />
-                    </div>
-
-                    <button onClick={formData.judulKustom ? () => generateFullKhutbah(true) : generateTitles} disabled={loading} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95 text-sm uppercase tracking-widest">
+                    <button onClick={formData.judulKustom ? () => generateFullKhutbah(true) : generateTitles} disabled={loading} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95 text-sm uppercase tracking-widest mt-2">
                         {loading ? <Icon name="Loader2" size={18} className="animate-spin" /> : <Icon name="Wand2" size={18} />}
                         <span>Generate</span>
                     </button>
@@ -381,7 +412,7 @@
                                         <div className="w-1.5 h-10 bg-emerald-600 rounded-full"></div>
                                         <h1 className="text-xl md:text-2xl font-black text-slate-800 uppercase tracking-tight">{step === 1 ? 'Settings' : 'Pilih Judul Khutbah'}</h1>
                                     </div>
-                                    {step === 1 ? <div className="bg-white rounded-[2rem] border border-slate-100 p-2 md:p-4"><SettingsForm /></div> : (
+                                    {step === 1 ? <div className="bg-white rounded-[2rem] border border-slate-100 p-6 md:p-8"><SettingsForm /></div> : (
                                         <div className="space-y-6">
                                             <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
                                                 {generatedTitles.map((title, index) => (
